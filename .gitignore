@@ -1,0 +1,8 @@
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+infra/environments/*/api.zip
+node_modules/
+dist/
