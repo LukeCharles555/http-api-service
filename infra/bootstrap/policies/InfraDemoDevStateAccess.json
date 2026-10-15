@@ -1,0 +1,37 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ListDevState",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::luke-infra-demo-tfstate-258562790897",
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": [
+            "dev/*"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "ReadWriteDevState",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject"
+      ],
+      "Resource": "arn:aws:s3:::luke-infra-demo-tfstate-258562790897/dev/terraform.tfstate"
+    },
+    {
+      "Sid": "ManageDevStateLock",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::luke-infra-demo-tfstate-258562790897/dev/terraform.tfstate.tflock"
+    }
+  ]
+}

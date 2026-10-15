@@ -1,0 +1,279 @@
+{
+  "terraform": {
+    "required_version": ">= 1.10, < 2.0",
+    "required_providers": {
+      "aws": {
+        "source": "hashicorp/aws",
+        "version": "= 6.68.0"
+      }
+    },
+    "backend": {
+      "s3": {
+        "bucket": "luke-infra-demo-tfstate-258562790897",
+        "key": "bootstrap/terraform.tfstate",
+        "region": "eu-west-1",
+        "encrypt": true,
+        "use_lockfile": true
+      }
+    }
+  },
+  "provider": {
+    "aws": {
+      "region": "eu-west-1",
+      "allowed_account_ids": [
+        "258562790897"
+      ]
+    }
+  },
+  "data": {
+    "aws_iam_user": {
+      "local_deployer": {
+        "user_name": "infra-demo-deployer"
+      }
+    }
+  },
+  "resource": {
+    "aws_iam_policy": {
+      "InfraDemoDevStateAccess": {
+        "name": "InfraDemoDevStateAccess",
+        "path": "/",
+        "policy": "${file(\"${path.module}/policies/InfraDemoDevStateAccess.json\")}",
+        "tags": {},
+        "lifecycle": {
+          "prevent_destroy": true
+        }
+      },
+      "InfraDemoDevMonitoringDeployment": {
+        "name": "InfraDemoDevMonitoringDeployment",
+        "path": "/",
+        "policy": "${file(\"${path.module}/policies/InfraDemoDevMonitoringDeployment.json\")}",
+        "tags": {},
+        "lifecycle": {
+          "prevent_destroy": true
+        }
+      },
+      "InfraDemoApiGatewayDeployment": {
+        "name": "InfraDemoApiGatewayDeployment",
+        "path": "/",
+        "policy": "${file(\"${path.module}/policies/InfraDemoApiGatewayDeployment.json\")}",
+        "tags": {},
+        "lifecycle": {
+          "prevent_destroy": true
+        }
+      },
+      "InfraDemoDevSecretDeployment": {
+        "name": "InfraDemoDevSecretDeployment",
+        "path": "/",
+        "policy": "${file(\"${path.module}/policies/InfraDemoDevSecretDeployment.json\")}",
+        "tags": {},
+        "lifecycle": {
+          "prevent_destroy": true
+        }
+      },
+      "InfraDemoDevAccessLogging": {
+        "name": "InfraDemoDevAccessLogging",
+        "path": "/",
+        "policy": "${file(\"${path.module}/policies/InfraDemoDevAccessLogging.json\")}",
+        "tags": {},
+        "lifecycle": {
+          "prevent_destroy": true
+        }
+      },
+      "InfraDemoProdDeployment": {
+        "name": "InfraDemoProdDeployment",
+        "path": "/",
+        "policy": "${file(\"${path.module}/policies/InfraDemoProdDeployment.json\")}",
+        "tags": {},
+        "lifecycle": {
+          "prevent_destroy": true
+        }
+      },
+      "InfraDemoProdStateAccess": {
+        "name": "InfraDemoProdStateAccess",
+        "path": "/",
+        "policy": "${file(\"${path.module}/policies/InfraDemoProdStateAccess.json\")}",
+        "tags": {},
+        "lifecycle": {
+          "prevent_destroy": true
+        }
+      },
+      "InfraDemoProdAccessLogging": {
+        "name": "InfraDemoProdAccessLogging",
+        "path": "/",
+        "policy": "${file(\"${path.module}/policies/InfraDemoProdAccessLogging.json\")}",
+        "tags": {},
+        "lifecycle": {
+          "prevent_destroy": true
+        }
+      },
+      "InfraDemoProdMonitoringDeployment": {
+        "name": "InfraDemoProdMonitoringDeployment",
+        "path": "/",
+        "policy": "${file(\"${path.module}/policies/InfraDemoProdMonitoringDeployment.json\")}",
+        "tags": {},
+        "lifecycle": {
+          "prevent_destroy": true
+        }
+      },
+      "InfraDemoProdSecretDeployment": {
+        "name": "InfraDemoProdSecretDeployment",
+        "path": "/",
+        "policy": "${file(\"${path.module}/policies/InfraDemoProdSecretDeployment.json\")}",
+        "tags": {},
+        "lifecycle": {
+          "prevent_destroy": true
+        }
+      },
+      "InfraDemoProdApiGatewayDeployment": {
+        "name": "InfraDemoProdApiGatewayDeployment",
+        "path": "/",
+        "policy": "${file(\"${path.module}/policies/InfraDemoProdApiGatewayDeployment.json\")}",
+        "tags": {},
+        "lifecycle": {
+          "prevent_destroy": true
+        }
+      }
+    },
+    "aws_iam_openid_connect_provider": {
+      "github": {
+        "url": "https://token.actions.githubusercontent.com",
+        "client_id_list": [
+          "sts.amazonaws.com"
+        ],
+        "thumbprint_list": [
+          "ab9d0263244dd0326eb67015705a667e79cfe998"
+        ],
+        "tags": {},
+        "lifecycle": {
+          "prevent_destroy": true
+        }
+      }
+    },
+    "aws_iam_role": {
+      "dev": {
+        "name": "github-http-api-service-dev",
+        "path": "/",
+        "description": "",
+        "max_session_duration": 3600,
+        "assume_role_policy": "${file(\"${path.module}/trust/dev.json\")}",
+        "tags": {},
+        "lifecycle": {
+          "prevent_destroy": true
+        },
+        "depends_on": [
+          "${aws_iam_openid_connect_provider.github}"
+        ]
+      },
+      "prod": {
+        "name": "github-http-api-service-prod",
+        "path": "/",
+        "description": "",
+        "max_session_duration": 3600,
+        "assume_role_policy": "${file(\"${path.module}/trust/prod.json\")}",
+        "tags": {},
+        "lifecycle": {
+          "prevent_destroy": true
+        },
+        "depends_on": [
+          "${aws_iam_openid_connect_provider.github}"
+        ]
+      }
+    },
+    "aws_iam_role_policy_attachment": {
+      "dev_InfraDemoDevStateAccess": {
+        "role": "${aws_iam_role.dev.name}",
+        "policy_arn": "${aws_iam_policy.InfraDemoDevStateAccess.arn}"
+      },
+      "dev_InfraDemoDevMonitoringDeployment": {
+        "role": "${aws_iam_role.dev.name}",
+        "policy_arn": "${aws_iam_policy.InfraDemoDevMonitoringDeployment.arn}"
+      },
+      "dev_InfraDemoApiGatewayDeployment": {
+        "role": "${aws_iam_role.dev.name}",
+        "policy_arn": "${aws_iam_policy.InfraDemoApiGatewayDeployment.arn}"
+      },
+      "dev_InfraDemoDevSecretDeployment": {
+        "role": "${aws_iam_role.dev.name}",
+        "policy_arn": "${aws_iam_policy.InfraDemoDevSecretDeployment.arn}"
+      },
+      "dev_InfraDemoDevAccessLogging": {
+        "role": "${aws_iam_role.dev.name}",
+        "policy_arn": "${aws_iam_policy.InfraDemoDevAccessLogging.arn}"
+      },
+      "prod_InfraDemoProdDeployment": {
+        "role": "${aws_iam_role.prod.name}",
+        "policy_arn": "${aws_iam_policy.InfraDemoProdDeployment.arn}"
+      },
+      "prod_InfraDemoProdStateAccess": {
+        "role": "${aws_iam_role.prod.name}",
+        "policy_arn": "${aws_iam_policy.InfraDemoProdStateAccess.arn}"
+      },
+      "prod_InfraDemoProdAccessLogging": {
+        "role": "${aws_iam_role.prod.name}",
+        "policy_arn": "${aws_iam_policy.InfraDemoProdAccessLogging.arn}"
+      },
+      "prod_InfraDemoProdMonitoringDeployment": {
+        "role": "${aws_iam_role.prod.name}",
+        "policy_arn": "${aws_iam_policy.InfraDemoProdMonitoringDeployment.arn}"
+      },
+      "prod_InfraDemoProdSecretDeployment": {
+        "role": "${aws_iam_role.prod.name}",
+        "policy_arn": "${aws_iam_policy.InfraDemoProdSecretDeployment.arn}"
+      },
+      "prod_InfraDemoProdApiGatewayDeployment": {
+        "role": "${aws_iam_role.prod.name}",
+        "policy_arn": "${aws_iam_policy.InfraDemoProdApiGatewayDeployment.arn}"
+      }
+    },
+    "aws_iam_role_policy": {
+      "dev_InfraDemoDevDeployment": {
+        "name": "InfraDemoDevDeployment",
+        "role": "${aws_iam_role.dev.name}",
+        "policy": "${file(\"${path.module}/policies/dev-role-InfraDemoDevDeployment.json\")}",
+        "lifecycle": {
+          "prevent_destroy": true
+        }
+      }
+    },
+    "aws_iam_user_policy_attachment": {
+      "InfraDemoDevStateAccess": {
+        "user": "${data.aws_iam_user.local_deployer.user_name}",
+        "policy_arn": "${aws_iam_policy.InfraDemoDevStateAccess.arn}"
+      },
+      "InfraDemoDevMonitoringDeployment": {
+        "user": "${data.aws_iam_user.local_deployer.user_name}",
+        "policy_arn": "${aws_iam_policy.InfraDemoDevMonitoringDeployment.arn}"
+      },
+      "InfraDemoApiGatewayDeployment": {
+        "user": "${data.aws_iam_user.local_deployer.user_name}",
+        "policy_arn": "${aws_iam_policy.InfraDemoApiGatewayDeployment.arn}"
+      },
+      "InfraDemoDevSecretDeployment": {
+        "user": "${data.aws_iam_user.local_deployer.user_name}",
+        "policy_arn": "${aws_iam_policy.InfraDemoDevSecretDeployment.arn}"
+      },
+      "InfraDemoDevAccessLogging": {
+        "user": "${data.aws_iam_user.local_deployer.user_name}",
+        "policy_arn": "${aws_iam_policy.InfraDemoDevAccessLogging.arn}"
+      },
+      "IAMUserChangePassword": {
+        "user": "${data.aws_iam_user.local_deployer.user_name}",
+        "policy_arn": "arn:aws:iam::aws:policy/IAMUserChangePassword"
+      },
+      "SignInLocalDevelopmentAccess": {
+        "user": "${data.aws_iam_user.local_deployer.user_name}",
+        "policy_arn": "arn:aws:iam::aws:policy/SignInLocalDevelopmentAccess"
+      }
+    },
+    "aws_iam_user_policy": {
+      "InfraDemoDevDeployment": {
+        "name": "InfraDemoDevDeployment",
+        "user": "${data.aws_iam_user.local_deployer.user_name}",
+        "policy": "${file(\"${path.module}/policies/local-user-InfraDemoDevDeployment.json\")}",
+        "lifecycle": {
+          "prevent_destroy": true
+        }
+      }
+    }
+  }
+}

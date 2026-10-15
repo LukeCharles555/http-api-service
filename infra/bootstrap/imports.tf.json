@@ -1,0 +1,140 @@
+{
+  "import": [
+    {
+      "to": "${aws_iam_policy.InfraDemoDevStateAccess}",
+      "id": "arn:aws:iam::258562790897:policy/InfraDemoDevStateAccess"
+    },
+    {
+      "to": "${aws_iam_policy.InfraDemoDevMonitoringDeployment}",
+      "id": "arn:aws:iam::258562790897:policy/InfraDemoDevMonitoringDeployment"
+    },
+    {
+      "to": "${aws_iam_policy.InfraDemoApiGatewayDeployment}",
+      "id": "arn:aws:iam::258562790897:policy/InfraDemoApiGatewayDeployment"
+    },
+    {
+      "to": "${aws_iam_policy.InfraDemoDevSecretDeployment}",
+      "id": "arn:aws:iam::258562790897:policy/InfraDemoDevSecretDeployment"
+    },
+    {
+      "to": "${aws_iam_policy.InfraDemoDevAccessLogging}",
+      "id": "arn:aws:iam::258562790897:policy/InfraDemoDevAccessLogging"
+    },
+    {
+      "to": "${aws_iam_policy.InfraDemoProdDeployment}",
+      "id": "arn:aws:iam::258562790897:policy/InfraDemoProdDeployment"
+    },
+    {
+      "to": "${aws_iam_policy.InfraDemoProdStateAccess}",
+      "id": "arn:aws:iam::258562790897:policy/InfraDemoProdStateAccess"
+    },
+    {
+      "to": "${aws_iam_policy.InfraDemoProdAccessLogging}",
+      "id": "arn:aws:iam::258562790897:policy/InfraDemoProdAccessLogging"
+    },
+    {
+      "to": "${aws_iam_policy.InfraDemoProdMonitoringDeployment}",
+      "id": "arn:aws:iam::258562790897:policy/InfraDemoProdMonitoringDeployment"
+    },
+    {
+      "to": "${aws_iam_policy.InfraDemoProdSecretDeployment}",
+      "id": "arn:aws:iam::258562790897:policy/InfraDemoProdSecretDeployment"
+    },
+    {
+      "to": "${aws_iam_policy.InfraDemoProdApiGatewayDeployment}",
+      "id": "arn:aws:iam::258562790897:policy/InfraDemoProdApiGatewayDeployment"
+    },
+    {
+      "to": "${aws_iam_openid_connect_provider.github}",
+      "id": "arn:aws:iam::258562790897:oidc-provider/token.actions.githubusercontent.com"
+    },
+    {
+      "to": "${aws_iam_role.dev}",
+      "id": "github-http-api-service-dev"
+    },
+    {
+      "to": "${aws_iam_role_policy_attachment.dev_InfraDemoDevStateAccess}",
+      "id": "github-http-api-service-dev/arn:aws:iam::258562790897:policy/InfraDemoDevStateAccess"
+    },
+    {
+      "to": "${aws_iam_role_policy_attachment.dev_InfraDemoDevMonitoringDeployment}",
+      "id": "github-http-api-service-dev/arn:aws:iam::258562790897:policy/InfraDemoDevMonitoringDeployment"
+    },
+    {
+      "to": "${aws_iam_role_policy_attachment.dev_InfraDemoApiGatewayDeployment}",
+      "id": "github-http-api-service-dev/arn:aws:iam::258562790897:policy/InfraDemoApiGatewayDeployment"
+    },
+    {
+      "to": "${aws_iam_role_policy_attachment.dev_InfraDemoDevSecretDeployment}",
+      "id": "github-http-api-service-dev/arn:aws:iam::258562790897:policy/InfraDemoDevSecretDeployment"
+    },
+    {
+      "to": "${aws_iam_role_policy_attachment.dev_InfraDemoDevAccessLogging}",
+      "id": "github-http-api-service-dev/arn:aws:iam::258562790897:policy/InfraDemoDevAccessLogging"
+    },
+    {
+      "to": "${aws_iam_role_policy.dev_InfraDemoDevDeployment}",
+      "id": "github-http-api-service-dev:InfraDemoDevDeployment"
+    },
+    {
+      "to": "${aws_iam_role.prod}",
+      "id": "github-http-api-service-prod"
+    },
+    {
+      "to": "${aws_iam_role_policy_attachment.prod_InfraDemoProdDeployment}",
+      "id": "github-http-api-service-prod/arn:aws:iam::258562790897:policy/InfraDemoProdDeployment"
+    },
+    {
+      "to": "${aws_iam_role_policy_attachment.prod_InfraDemoProdStateAccess}",
+      "id": "github-http-api-service-prod/arn:aws:iam::258562790897:policy/InfraDemoProdStateAccess"
+    },
+    {
+      "to": "${aws_iam_role_policy_attachment.prod_InfraDemoProdAccessLogging}",
+      "id": "github-http-api-service-prod/arn:aws:iam::258562790897:policy/InfraDemoProdAccessLogging"
+    },
+    {
+      "to": "${aws_iam_role_policy_attachment.prod_InfraDemoProdMonitoringDeployment}",
+      "id": "github-http-api-service-prod/arn:aws:iam::258562790897:policy/InfraDemoProdMonitoringDeployment"
+    },
+    {
+      "to": "${aws_iam_role_policy_attachment.prod_InfraDemoProdSecretDeployment}",
+      "id": "github-http-api-service-prod/arn:aws:iam::258562790897:policy/InfraDemoProdSecretDeployment"
+    },
+    {
+      "to": "${aws_iam_role_policy_attachment.prod_InfraDemoProdApiGatewayDeployment}",
+      "id": "github-http-api-service-prod/arn:aws:iam::258562790897:policy/InfraDemoProdApiGatewayDeployment"
+    },
+    {
+      "to": "${aws_iam_user_policy_attachment.InfraDemoDevStateAccess}",
+      "id": "infra-demo-deployer/arn:aws:iam::258562790897:policy/InfraDemoDevStateAccess"
+    },
+    {
+      "to": "${aws_iam_user_policy_attachment.InfraDemoDevMonitoringDeployment}",
+      "id": "infra-demo-deployer/arn:aws:iam::258562790897:policy/InfraDemoDevMonitoringDeployment"
+    },
+    {
+      "to": "${aws_iam_user_policy_attachment.InfraDemoApiGatewayDeployment}",
+      "id": "infra-demo-deployer/arn:aws:iam::258562790897:policy/InfraDemoApiGatewayDeployment"
+    },
+    {
+      "to": "${aws_iam_user_policy_attachment.InfraDemoDevSecretDeployment}",
+      "id": "infra-demo-deployer/arn:aws:iam::258562790897:policy/InfraDemoDevSecretDeployment"
+    },
+    {
+      "to": "${aws_iam_user_policy_attachment.InfraDemoDevAccessLogging}",
+      "id": "infra-demo-deployer/arn:aws:iam::258562790897:policy/InfraDemoDevAccessLogging"
+    },
+    {
+      "to": "${aws_iam_user_policy_attachment.IAMUserChangePassword}",
+      "id": "infra-demo-deployer/arn:aws:iam::aws:policy/IAMUserChangePassword"
+    },
+    {
+      "to": "${aws_iam_user_policy_attachment.SignInLocalDevelopmentAccess}",
+      "id": "infra-demo-deployer/arn:aws:iam::aws:policy/SignInLocalDevelopmentAccess"
+    },
+    {
+      "to": "${aws_iam_user_policy.InfraDemoDevDeployment}",
+      "id": "infra-demo-deployer:InfraDemoDevDeployment"
+    }
+  ]
+}
