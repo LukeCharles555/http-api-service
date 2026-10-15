@@ -39,6 +39,20 @@ resource "aws_apigatewayv2_stage" "default" {
     throttling_burst_limit = var.api_burst_limit
   }
 
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.access.arn
+
+    format = jsonencode({
+      requestId         = "$context.requestId"
+      requestTime       = "$context.requestTime"
+      method            = "$context.httpMethod"
+      route             = "$context.routeKey"
+      status            = "$context.status"
+      responseLatencyMs = "$context.responseLatency"
+      responseLength    = "$context.responseLength"
+    })
+  }
+
   depends_on = [
     aws_apigatewayv2_route.default,
     aws_lambda_permission.gateway
