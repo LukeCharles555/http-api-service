@@ -61,6 +61,22 @@ jobs:
           terraform -chdir=infra/environments/prod init -backend=false -lockfile=readonly
           terraform -chdir=infra/environments/prod validate
 
+      - name: Record application checksum
+        if: github.event_name != 'pull_request'
+        working-directory: api/dist
+        run: sha256sum handler.cjs > SHA256SUMS
+
+      - name: Save release build
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-build-${{ github.run_attempt }}
+          path: |
+            api/dist/handler.cjs
+            api/dist/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14
+
   deploy-dev:
     name: Deploy dev
     needs: checks
@@ -82,21 +98,20 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: api/package-lock.json
-
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.16.5"
           terraform_wrapper: false
 
-      - name: Build application
-        run: |
-          npm --prefix api ci
-          npm --prefix api run build
+      - name: Download release build
+        uses: actions/download-artifact@v4
+        with:
+          name: api-build-${{ github.run_attempt }}
+          path: api/dist
+
+      - name: Verify application checksum
+        working-directory: api/dist
+        run: sha256sum --check SHA256SUMS
 
       - name: Authenticate with AWS
         uses: aws-actions/configure-aws-credentials@v6.3.0
