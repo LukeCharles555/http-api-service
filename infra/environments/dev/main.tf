@@ -66,3 +66,7 @@ output "function_name" {
 output "api_url" {
   value = module.api.api_url
 }
+
+output "secret_arn" {
+  value = module.api.secret_arn
+}

@@ -83,12 +83,14 @@ resource "aws_lambda_function" "api" {
 
   environment {
     variables = {
-      APP_ENV   = var.environment
-      LOG_LEVEL = var.log_level
+      APP_ENV        = var.environment
+      LOG_LEVEL      = var.log_level
+      API_SECRET_ARN = aws_secretsmanager_secret.downstream.arn
     }
   }
 
-  depends_on = [aws_iam_role_policy.logging]
+  depends_on = [aws_iam_role_policy.logging,
+  aws_iam_role_policy.read_secret]
 }
 
 output "function_name" {
