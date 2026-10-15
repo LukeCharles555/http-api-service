@@ -1,0 +1,133 @@
+name: Check and deploy API
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+
+jobs:
+  checks:
+    name: Test and validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.5"
+          terraform_wrapper: false
+
+      - name: Install dependencies
+        run: npm --prefix api ci
+
+      - name: Typecheck
+        run: npm --prefix api run typecheck
+
+      - name: Test
+        run: npm --prefix api test
+
+      - name: Build
+        run: npm --prefix api run build
+
+      - name: Check Terraform formatting
+        run: terraform fmt -check -recursive infra
+
+      - name: Validate dev
+        run: |
+          terraform -chdir=infra/environments/dev init -backend=false -lockfile=readonly
+          terraform -chdir=infra/environments/dev validate
+
+      - name: Validate prod
+        run: |
+          terraform -chdir=infra/environments/prod init -backend=false -lockfile=readonly
+          terraform -chdir=infra/environments/prod validate
+
+  deploy-dev:
+    name: Deploy dev
+    needs: checks
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: dev
+
+    permissions:
+      contents: read
+      id-token: write
+
+    concurrency:
+      group: deploy-dev
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.5"
+          terraform_wrapper: false
+
+      - name: Build application
+        run: |
+          npm --prefix api ci
+          npm --prefix api run build
+
+      - name: Authenticate with AWS
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::258562790897:role/github-http-api-service-dev
+          aws-region: eu-west-1
+          role-session-name: github-dev-${{ github.run_id }}
+          allowed-account-ids: "258562790897"
+
+      - name: Initialise Terraform
+        run: terraform -chdir=infra/environments/dev init -lockfile=readonly
+
+      - name: Plan
+        run: terraform -chdir=infra/environments/dev plan -lock-timeout=120s -out=tfplan
+
+      - name: Apply
+        run: terraform -chdir=infra/environments/dev apply tfplan
+
+      - name: Smoke test
+        shell: bash
+        run: |
+          api_url=$(terraform -chdir=infra/environments/dev output -raw api_url)
+
+          for endpoint in health mockData dependency-check; do
+            echo "Checking /$endpoint"
+            curl --fail-with-body --silent --show-error \
+              --connect-timeout 5 \
+              --max-time 15 \
+              --retry 3 \
+              --retry-delay 2 \
+              "$api_url/$endpoint"
+            echo
+            sleep 2
+          done
