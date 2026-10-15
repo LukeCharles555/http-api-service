@@ -1,0 +1,159 @@
+name: Promote to production
+
+on:
+  workflow_dispatch:
+    inputs:
+      dev_run_id:
+        description: "Successful Check and deploy API run ID"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+
+# Only one production promotion can run at a time.
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: Promote tested build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: prod
+
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+
+    steps:
+      - name: Validate selected dev run
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          DEV_RUN_ID: ${{ inputs.dev_run_id }}
+        shell: bash
+        run: |
+          if ! [[ "$DEV_RUN_ID" =~ ^[0-9]+$ ]]; then
+            echo "Run ID must contain digits only."
+            exit 1
+          fi
+
+          run=$(gh api "repos/$REPOSITORY/actions/runs/$DEV_RUN_ID")
+
+          echo "$run" | jq -e \
+            --arg repo "$REPOSITORY" \
+            '
+              .conclusion == "success" and
+              .status == "completed" and
+              .head_branch == "main" and
+              .head_repository.full_name == $repo and
+              .path == ".github/workflows/ci-deploy.yml" and
+              (.event == "push" or .event == "workflow_dispatch")
+            ' >/dev/null
+
+          sha=$(echo "$run" | jq -r '.head_sha')
+          attempt=$(echo "$run" | jq -r '.run_attempt')
+          main_sha=$(gh api "repos/$REPOSITORY/commits/main" --jq '.sha')
+
+          if [ "$sha" != "$main_sha" ]; then
+            echo "This run has been superseded. Select the successful run for current main."
+            exit 1
+          fi
+
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=api-build-$attempt" >> "$GITHUB_OUTPUT"
+
+          echo "### Selected release" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Dev run: $DEV_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: $sha" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Check out tested infrastructure
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.release.outputs.sha }}
+          persist-credentials: false
+
+      - name: Download tested application
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.release.outputs.artifact_name }}
+          path: api/dist
+          run-id: ${{ inputs.dev_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Verify application checksum
+        working-directory: api/dist
+        run: sha256sum --check SHA256SUMS
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.5"
+          terraform_wrapper: false
+
+      - name: Authenticate with AWS
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::258562790897:role/github-http-api-service-prod
+          aws-region: eu-west-1
+          role-session-name: github-prod-${{ github.run_id }}
+          allowed-account-ids: "258562790897"
+
+      - name: Initialise Terraform
+        run: terraform -chdir=infra/environments/prod init -lockfile=readonly
+
+      - name: Validate Terraform
+        run: terraform -chdir=infra/environments/prod validate
+
+      - name: Plan production changes
+        run: terraform -chdir=infra/environments/prod plan -lock-timeout=120s -out=tfplan
+
+      - name: Check release is still current
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          RELEASE_SHA: ${{ steps.release.outputs.sha }}
+        shell: bash
+        run: |
+          main_sha=$(gh api "repos/$REPOSITORY/commits/main" --jq '.sha')
+
+          if [ "$RELEASE_SHA" != "$main_sha" ]; then
+            echo "Main changed during promotion. Promote its successful dev run instead."
+            exit 1
+          fi
+
+      - name: Apply production changes
+        run: terraform -chdir=infra/environments/prod apply tfplan
+
+      - name: Record production URL
+        shell: bash
+        run: |
+          api_url=$(terraform -chdir=infra/environments/prod output -raw api_url)
+          echo "### Production API" >> "$GITHUB_STEP_SUMMARY"
+          echo "$api_url" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Smoke test production
+        shell: bash
+        run: |
+          api_url=$(terraform -chdir=infra/environments/prod output -raw api_url)
+
+          for endpoint in health mockData dependency-check; do
+            echo "Checking /$endpoint"
+            curl --fail-with-body --silent --show-error \
+              --connect-timeout 5 \
+              --max-time 15 \
+              --retry 3 \
+              --retry-delay 2 \
+              "$api_url/$endpoint"
+            echo
+            sleep 2
+          done
